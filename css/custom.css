@@ -1,0 +1,28 @@
+body{
+    background-color: #121827;
+}
+.custom-nav{
+    background-color: #121827 !important;
+    opacity: 85%;
+}
+.custom-nav-title{
+    color: #dc2626 !important;
+    /* background-color: #121827 !important; */
+}
+.custom-card-hover{
+    background-color: #121827;
+    padding: 20px;
+    margin: 5px;
+    text-align: center;
+    transition: background-color 0.3s ease, transform 0.3s ease; 
+  }
+
+  .custom-card-hover:hover {
+    transform: scale(1.1, 1.1);
+    /* transform: translateX(-10px), translateY(-5px); */
+    background-color: #2f3d62; 
+    color: white; 
+  }
+  .custom-cursor-pointer{
+    cursor: pointer;
+  }
