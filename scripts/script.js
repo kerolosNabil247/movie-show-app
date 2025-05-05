@@ -1,142 +1,253 @@
 const APIKEY = '51b70285';
+const latestReleaseContainer = document.getElementById('latestReleaseContainer');
+const noResultContainer = document.getElementById('noResultContainer');
+const noResultMsg = document.getElementById('noResultMsg');
 const moviesContainer = document.getElementById('moviesContainer');
 const movieSection = document.getElementById('movieSection');
+const movieLine = document.getElementById('movieLine');
 const showsContainer = document.getElementById('showsContainer');
 const showSection = document.getElementById('showSection');
-let newElement;
-let searchingValue;
-let searching = document.getElementById('search');
-searching.addEventListener("keypress",function(e){
-    if(e.key == 'Enter'){
-        // for prevent the relod of the page due to the behavior of the form that contain the search
-        e.preventDefault();
-        searchingValue = searching.value;
-        fetchMovieAndShow(searchingValue);
-    }
-})
+const showLine = document.getElementById('showLine');
+const favoriteContainer = document.getElementById('favoriteContainer');
+const favoriteSection = document.getElementById('favoriteSection');
+const searchInput = document.getElementById('search');
 
+// Array to store favorite movies/shows
+let favorites = [];
 
+// Default fetch
+async function defultFetch(){
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    // console.log(currentYear);
+    const url = `http://www.omdbapi.com/?s=action&y=${currentYear}&apikey=${APIKEY}`;
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json()
+        latestReleaseContainer.innerHTML = '';
+        const mediaItems = data.Search;
 
-// fetch function
-function fetchMovieAndShow(title){
-    fetch(`http://www.omdbapi.com/?s=${encodeURIComponent(title)}&apikey=${APIKEY}`)
-    .then(response => response.json())
-    .then(data => { // it return Search => list of the movies or shows
-        
-        // clearing the movie and show containers to hold the new cards
-        moviesContainer.innerHTML = '';
-        showsContainer.innerHTML = '';
+            await Promise.all(mediaItems.map(async (item) => { // use await here
+            const ratingData = await fetchRating(item.Title);
+            item.imdbRating = ratingData.imdbRating;
+        }));
 
-        // iterate on the list of the results and make cards 
-        data.Search.forEach(element => {
-
-            // create div to hold the movie card
-            newElement = document.createElement('div');
-            newElement.classList.add('col-lg-3','col-md-6','mb-3','main-card');
-
-            // create the img of the movie and append it to the movie card
-            let img = document.createElement('img');
-            img.src = element.Poster;
-            img.classList.add('mb-2','img-fluid');
-            newElement.appendChild(img);
-
-            // create the title of the movie
-            let elemnetTitle = document.createElement('h6');
-            let h6Text;
-            // check the type to know what to write film or show
-            if(element.Type == 'movie'){
-                h6Text = document.createTextNode(`Film: ${element.Title}`);
-            }else{
-                h6Text = document.createTextNode(`Show: ${element.Title}`);
-            }
-
-            //Append it to the movie card
-            elemnetTitle.classList.add('text-white');
-            elemnetTitle.appendChild(h6Text)
-            newElement.appendChild(elemnetTitle);
-
-            // create the year of the movie and append it to the movie card
-            let elemnetYear = document.createElement('p');
-            let yearText = document.createTextNode(`${element.Year}`);
-            elemnetYear.classList.add('text-white');
-            elemnetYear.appendChild(yearText);
-            newElement.appendChild(elemnetYear);
-
-            //create the rate of the movie and 
-            let elementRate = document.createElement('small');
-            let rateText ;
-            /* fetch the api with the title we get from the main fetch 
-            so we cant get the rate of the movie with this title */
-            fetch(`http://www.omdbapi.com/?t=${encodeURIComponent(element.Title)}&apikey=${APIKEY}`)
-            .then(response => response.json())
-            .then(data => {
-                if(data.imdbRating == 'undefind'){
-                    elementRate.innerHTML = '';
-                }else{
-                    rateText = document.createTextNode(`IMDb Rate: ${data.imdbRating}`);
-                    elementRate.appendChild(rateText);
-                }
-            })
-            .catch(error => {console.log('there is error heere')})
-
-            // append the rate to the movie card
-            newElement.appendChild(elementRate);
-            
-
-            // create both div containing the icon and the icon itself and append them
-            let iconDiv = document.createElement('div');
-            let icon = document.createElement('i');
-            icon.classList.add('bi','bi-heart','custom-cursor-pointer');
-            iconDiv.appendChild(icon);
-            newElement.appendChild(iconDiv);
-
-            // put event to the love icon when clicked to change to full-filled
-            icon.addEventListener('click',function(){
-                icon.classList.toggle('bi-heart');
-                icon.classList.toggle('bi-heart-fill');
-                icon.classList.toggle('liked');
-            })
-
-            //adding the card hover style
-            newElement.classList.add('custom-card-hover');
-
-            // append the movie or show card to movie section
-            if(element.Type == "movie"){
-                movieSection.classList.remove('d-none');
-                moviesContainer.appendChild(newElement);
-            }else{
-                showSection.classList.remove('d-none');
-                showsContainer.appendChild(newElement);
-            }
+        mediaItems.forEach(media => {
+            const card = createMediaCard(media);
+            latestReleaseContainer.appendChild(card);
         });
-        document.getElementById('movieSection').scrollIntoView({ behavior: "smooth",block: "start" });
-    })
-    .catch(error =>{
-        moviesContainer.innerHTML = '';
-        let errorElemnet = document.createElement('p');
-        let errorText = document.createTextNode(`There is no result for: ${searchingValue}`);
-        errorElemnet.appendChild(errorText);
-        moviesContainer.appendChild(errorElemnet);
-    })
+    } catch (error) {
+        console.error('Fetch error:', error);
+        displayMessage(`Error: ${error.message}`);
+        throw error; // Re-throw to be caught by caller
+    }
+}
+defultFetch();
+
+// Helper function to create a movie/show card
+function createMediaCard(media, showIcon = true) {
+    const card = document.createElement('div');
+    card.className = 'col-lg-3 col-md-6 mb-3 main-card custom-card-hover';
+    card.setAttribute('data-title', media.Title); // Store title for easy removal
+    card.setAttribute('data-year', media.Year);
+    card.setAttribute('data-rate', media.imdbRating);
+
+    const img = document.createElement('img');
+    img.src = media.Poster === 'N/A'? '../assets/no_image.jpg' : media.Poster;
+    img.className = 'mb-2 img-fluid';
+
+    const title = document.createElement('h6');
+    title.className = 'text-secondary';
+    title.textContent = media.Type === 'movie' ? `Film: ${media.Title}` : `Show: ${media.Title}`;
+
+    const year = document.createElement('p');
+    year.className = 'text-secondary';
+    year.textContent = media.Year;
+
+    const rating = document.createElement('small');
+    rating.className = 'text-secondary';
+    rating.textContent =  media.imdbRating ? `IMDb Rate: ${media.imdbRating}`: `IMDb Rate: N/A`;
+
+    const iconDiv = document.createElement('div');
+    iconDiv.classList.add('icon');
+    const icon = document.createElement('i');
+    if(!showIcon){
+        icon.className = 'bi bi-heart-fill custom-cursor-pointer';
+    }else{
+        icon.className = 'bi bi-heart custom-cursor-pointer';
+    }
+    icon.addEventListener('click', toggleFavorite);
+
+    iconDiv.appendChild(icon);
+
+    card.appendChild(img);
+    card.appendChild(title);
+    card.appendChild(year);
+    card.appendChild(rating);
+    card.appendChild(iconDiv);
+    // if(showIcon){
+    //     card.appendChild(iconDiv);
+    // }
+
+    return card;
 }
 
-let favoriteContainer = document.getElementById('favoriteContainer');
-let favoriteSection = document.getElementById('favoriteSection');
-document.addEventListener('click', function (e) {
-    if (e.target.classList.contains('liked')) {
-        console.log('it has liked class');
-      // Get the full card to move (adjust if your structure differs)
-        const card = e.target.closest('.main-card');
-        const clonedCard = card.cloneNode(true);
+// Helper function to display a message
+function displayMessage(message, container = moviesContainer) {
+    container.innerHTML = `<p class="text-secondary">${message}</p>`;
+}
 
-        if(!favoriteContainer.contains(clonedCard)){  
-            console.log('there is no card like me') 
-            favoriteSection.classList.remove('d-none');
-            favoriteContainer.appendChild(clonedCard);
-        }else{
-            console.log('there is card like me');
+// Async function to fetch data from OMDb API
+async function fetchData(url) {
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
-
-        console.log(card);
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Fetch error:', error);
+        displayMessage(`Error: ${error.message}`);
+        throw error; // Re-throw to be caught by caller
     }
-  });
+}
+
+// Async function to fetch movie/show details and display them
+async function fetchAndDisplayMedia(title) {
+    try {
+        const url = `http://www.omdbapi.com/?s=${encodeURIComponent(title)}&apikey=${APIKEY}`;
+        const data = await fetchData(url);
+
+        if (data.Response === 'True') {
+            noResultContainer.classList.add('d-none');
+            moviesContainer.innerHTML = '';
+            showsContainer.innerHTML = '';
+            const mediaItems = data.Search;
+
+             await Promise.all(mediaItems.map(async (item) => { // use await here
+                const ratingData = await fetchRating(item.Title);
+                item.imdbRating = ratingData.imdbRating;
+            }));
+
+            mediaItems.forEach(media => {
+                const card = createMediaCard(media);
+                if (media.Type === 'movie') {
+                    movieSection.classList.remove('d-none');
+                    movieLine.classList.remove('d-none');
+                    moviesContainer.appendChild(card);
+                } else {
+                    showSection.classList.remove('d-none');
+                    showLine.classList.remove('d-none');
+                    showsContainer.appendChild(card);
+                }
+            });
+            document.getElementById('movieSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            moviesContainer.innerHTML = '';
+            showsContainer.innerHTML = '';
+            movieSection.classList.add('d-none');
+            movieLine.classList.add('d-none');
+            showSection.classList.add('d-none');
+            showLine.classList.add('d-none');
+            noResultContainer.classList.remove('d-none');
+            noResultMsg.innerText = `No results found for "${title}"`;
+            noResultContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    } catch (error) {
+        // Handle errors from fetchData
+        console.error('Error fetching and displaying media:', error);
+        displayMessage('An error occurred. Please check your network connection and try again.');
+    }
+}
+
+// Function to handle Enter key press in the search input
+searchInput.addEventListener('keypress', (event) => {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        const searchTerm = searchInput.value.trim();
+        if (searchTerm) {
+            fetchAndDisplayMedia(searchTerm);
+        } else {
+            alert('Please enter a title to search.');
+        }
+    }
+});
+
+// Async function to fetch rating
+async function fetchRating(title) {
+    const url = `http://www.omdbapi.com/?t=${encodeURIComponent(title)}&apikey=${APIKEY}`;
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        return data; // Return the whole data object
+    } catch (error) {
+        console.error('Error fetching rating:', error);
+        return { imdbRating: 'N/A' };
+    }
+}
+
+// Function to handle adding/removing a movie/show to favorites
+function toggleFavorite(event) {
+    const icon = event.target;
+    const card = icon.closest('.main-card');
+    const title = card.getAttribute('data-title');
+    const year = card.getAttribute('data-year');
+    const rate = card.getAttribute('data-rate');
+    
+    if (icon.classList.contains('bi-heart')) {
+        icon.classList.remove('bi-heart');
+        icon.classList.add('bi-heart-fill', 'liked');
+        // Add to favorites array
+        const mediaObject = {
+            Title: title,
+            Year: year,
+            imdbRating: rate,
+            Poster: card.querySelector('img').src, // Get poster from the card
+            Type: title.includes("Show") ? "series" : "movie"
+        };
+        favorites.push(mediaObject);
+        updateFavoriteSection(); // Update display
+        // console.log(container);
+    } else {
+        icon.classList.remove('bi-heart-fill', 'liked');
+        icon.classList.add('bi-heart');
+        // Remove from favorites array
+        const indexToRemove = favorites.findIndex(item => item.Title === title && item.Year === year);
+        if (indexToRemove !== -1) {
+            // get the title and the year of the card will be removed from favorites 
+            const title = favorites[indexToRemove].Title;
+            const year = favorites[indexToRemove].Year;
+            // hold the original card of the one will be removed from the favorites
+            const original = document.querySelector(`.main-card[data-title="${title}"][data-year="${year}"]`);
+            if(original){
+                // hold the icon inside the original card to edit it
+                const originalIcon = original.querySelector('i');
+                if (originalIcon) {
+                    // console.log(originalIcon);
+                    originalIcon.classList.add('bi-heart');
+                    originalIcon.classList.remove('bi-heart-fill', 'liked');
+                }
+            }
+                favorites.splice(indexToRemove, 1);
+                updateFavoriteSection(); // Update display
+        }
+    }
+}
+
+function updateFavoriteSection() {
+    favoriteContainer.innerHTML = ''; // Clear the container
+    if (favorites.length === 0) {
+        favoriteSection.classList.add('d-none');
+    } else {
+        favoriteSection.classList.remove('d-none');
+        favorites.forEach(media => {
+            const card = createMediaCard(media, false);
+            favoriteContainer.appendChild(card);
+            document.getElementById('favoriteContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    }
+}

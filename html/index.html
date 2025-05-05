@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="../css/custom.css">
     <title>MovieShop</title>
 </head>
-<body>
+<body class="mt-5">
     <!-- the beggining of the nav bar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-lg p-3 mb-5 bg-body custom-nav fixed-top" >
         <div class="container-fluid">
@@ -41,32 +41,41 @@
     <!-- the end of the nav bar -->
 
     <!-- the beggining of the section -->
-    <section class=" mt-5">
+    <section class=" mt-5 pt-3">
         <div class="container mt-5">
-            <!-- the main photo -->
-            <div class="row justify-content-center mt-5">
-                <div class="col-10">
-                    <img src="../assets/Gemini_Generated_Image_rmc399rmc399rmc3.jpg" class="img-fluid d-none d-sm-block mt-5" alt="...">
+            <!-- lates release section -->
+            <div class="row mt-3 mb-3 justify-content-center text-center" id="latestReleaseSection" >
+                <div class="col-4 mt-3">
+                    <h2 class="text-white">Latest Release</h2>
                 </div>
             </div>
+            <div class="row text-white text-center justify-content-center custom-container" id="latestReleaseContainer">
+                
+            </div>
+            <hr class="d-none" id="movieLine">
 
+            <div class="row mt-3 mb-3 justify-content-center text-center d-none" id="noResultContainer" >
+                <div class="col-4 mt-3">
+                    <h2 class="text-white" id="noResultMsg">No Result appear</h2>
+                </div>
+            </div>
             <!-- movies section -->
             <div class="row mt-3 mb-3 justify-content-center text-center d-none" id="movieSection" >
                 <div class="col-4 mt-3">
                     <h2 class="text-white">Movies</h2>
                 </div>
             </div>
-            <div class="row text-white text-center justify-content-center" id="moviesContainer">
+            <div class="row text-white text-center justify-content-center custom-container" id="moviesContainer">
                 
             </div>
-            <hr>
+            <hr class="d-none" id="showLine">
             <!-- shows section -->
             <div class="row mt-3 mb-3 justify-content-center text-center d-none" id="showSection" >
                 <div class="col-4 mt-3">
                     <h2 class="text-white">Shows</h2>
                 </div>
             </div>
-            <div class="row text-white text-center justify-content-center" id="showsContainer">
+            <div class="row text-white text-center justify-content-center custom-container" id="showsContainer">
                 
             </div>
             <!-- favorite section -->
