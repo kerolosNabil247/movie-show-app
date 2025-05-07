@@ -1,4 +1,4 @@
-const APIKEY = '51b70285';
+const APIKEY = 'your_api_key_here'; 
 const latestReleaseContainer = document.getElementById('latestReleaseContainer');
 const noResultContainer = document.getElementById('noResultContainer');
 const noResultMsg = document.getElementById('noResultMsg');
